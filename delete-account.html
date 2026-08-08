@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="be">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<title>Выдаленне акаўнта — MovaAI</title>
+
+<style>
+  /* Тая ж палітра, што ў lib/screens/paywall_screen.dart і на старонцы аплаты. */
+  :root {
+    --canvas: #f0f4f9;
+    --card: #ffffff;
+    --blue: #2f80ed;
+    --blue-light: #56ccf2;
+    --ink: #1c283c;
+    --muted: #6b7686;
+    --red: #eb5757;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 560px; margin: 0 auto; padding: 24px 20px 48px; }
+
+  .hero {
+    border-radius: 24px;
+    padding: 28px 24px 26px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--blue), var(--blue-light));
+    box-shadow: 0 8px 20px -6px rgba(47, 128, 237, 0.45);
+  }
+  .stork {
+    width: 88px; height: 88px; margin: 0 auto 16px;
+    border-radius: 50%; background: #fff; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+  .stork img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero h1 { margin: 0 0 8px; font-size: 25px; font-weight: 800; color: #fff; }
+  .hero p { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,.92); }
+
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    margin-top: 18px;
+    box-shadow: 0 4px 16px -8px rgba(28, 40, 60, 0.18);
+  }
+  .card h2 { margin: 0 0 12px; font-size: 17px; font-weight: 700; }
+  .card p, .card li { font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .card p { margin: 0 0 10px; }
+  ol, ul { margin: 0 0 4px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--ink); }
+
+  .warn {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(235, 87, 87, .08);
+    color: var(--red);
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  a { color: var(--blue); font-weight: 600; }
+
+  .mail {
+    display: block;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blue), var(--blue-light));
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  footer { margin-top: 22px; text-align: center; font-size: 12px; color: #97a1b0; }
+</style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="stork"><img src="stork.webp" alt="Бусел MovaAI" /></div>
+    <h1>Выдаленне акаўнта MovaAI</h1>
+    <p>Вы можаце выдаліць свой акаўнт разам з усімі данымі. Гэта незваротна.</p>
+  </section>
+
+  <section class="card">
+    <h2>Спосаб 1 — у дадатку (адразу)</h2>
+    <ol>
+      <li>Адкрыйце <strong>MovaAI</strong> і ўвайдзіце ў свой акаўнт.</li>
+      <li>Перайдзіце ў <strong>Профіль → Налады</strong>.</li>
+      <li>У раздзеле <strong>ДАНЫЯ</strong> націсніце <strong>«Выдаліць акаўнт»</strong>.</li>
+      <li>Пацвердзіце выдаленне ў дыялогу.</li>
+    </ol>
+    <p>Акаўнт і ўсе звязаныя даныя выдаляюцца адразу, без перыяду чакання.</p>
+  </section>
+
+  <section class="card">
+    <h2>Спосаб 2 — праз запыт на e-mail</h2>
+    <p>Калі дадатак больш не ўстаноўлены, напішыце нам з таго самага e-mail,
+       на які зарэгістраваны акаўнт, і пазначце тэму «Выдаленне акаўнта».
+       Мы выдаляем акаўнт цягам 30 дзён пасля пацверджання.</p>
+    <a class="mail" href="mailto:aleksyl20099@gmail.com?subject=%D0%92%D1%8B%D0%B4%D0%B0%D0%BB%D0%B5%D0%BD%D0%BD%D0%B5%20%D0%B0%D0%BA%D0%B0%D1%83%D0%BD%D1%82%D0%B0%20MovaAI">
+      Напісаць на aleksyl20099@gmail.com
+    </a>
+  </section>
+
+  <section class="card">
+    <h2>Што выдаляецца</h2>
+    <ul>
+      <li>Акаўнт і e-mail (запіс аўтэнтыфікацыі)</li>
+      <li>Профіль: нікнейм, аватар, узровень, XP, серыя дзён</li>
+      <li>Прагрэс па ўроках і завершаныя ўрокі</li>
+      <li>Статыстыка выкарыстання</li>
+      <li>Адпраўленыя скаргі на адказы ІІ</li>
+      <li>Статус Прэміум і запіс пра аплату</li>
+    </ul>
+    <p>Галасавыя запісы і паведамленні чата не зберагаюцца на серверы —
+       яны абрабляюцца транзітам і не патрабуюць выдалення.</p>
+    <div class="warn">
+      Выдаленне незваротнае. Актыўны Прэміум не вяртаецца грашыма і
+      перастае дзейнічаць разам з акаўнтам.
+    </div>
+  </section>
+
+  <footer>© 2026 MovaAI · <a href="index.html">Прэміум</a></footer>
+</main>
+</body>
+</html>

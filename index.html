@@ -1,366 +1,2348 @@
 <!DOCTYPE html>
 <html lang="be">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="color-scheme" content="light" />
-<meta name="robots" content="noindex" />
-<title>Прэміум — MovaAI</title>
-
-<!-- Віджэт bePaid. Ён сам малюе форму карты ва ўбудаваным iframe, таму
-     рэквізіты карты ніколі не праходзяць праз гэтую старонку. -->
-<script type="text/javascript" src="https://js.bepaid.by/widget/be_gateway.js"></script>
-
-<style>
-  /* Палітра ўзятая з lib/screens/paywall_screen.dart, каб вэб-старонка не
-     выглядала чужой пасля пераходу з дадатка. */
-  :root {
-    --canvas: #f0f4f9;
-    --card: #ffffff;
-    --blue: #2f80ed;
-    --blue-light: #56ccf2;
-    --ink: #1c283c;
-    --muted: #6b7686;
-    --faint: #97a1b0;
-    --green: #27ae60;
-  }
-
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-  html, body {
-    margin: 0;
-    min-height: 100%;
-    background: var(--canvas);
-    color: var(--ink);
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  main {
-    max-width: 460px;
-    margin: 0 auto;
-    padding: 24px 20px 48px;
-  }
-
-  /* Той самы градыент, што і ў hero-картцы дадатка. */
-  .hero {
-    border-radius: 24px;
-    padding: 28px 24px 26px;
-    text-align: center;
-    background: linear-gradient(135deg, var(--blue), var(--blue-light));
-    box-shadow: 0 8px 20px -6px rgba(47, 128, 237, 0.45);
-  }
-
-  .stork {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 16px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-  }
-  .stork img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  .hero h1 {
-    margin: 0 0 8px;
-    font-size: 27px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #fff;
-  }
-  .hero p {
-    margin: 0;
-    font-size: 15px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.92);
-  }
-
-  .plan {
-    margin-top: 20px;
-    background: var(--card);
-    border: 2px solid var(--blue);
-    border-radius: 16px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 4px 14px rgba(47, 128, 237, 0.14);
-  }
-  .plan h2 {
-    margin: 0 0 6px;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--blue);
-  }
-  .price {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 7px;
-    margin: 10px 0 6px;
-  }
-  .price b { font-size: 38px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
-  .price span { font-size: 13px; color: var(--faint); }
-  .plan .sub { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
-
-  ul { list-style: none; margin: 20px 0 0; padding: 0; }
-  li {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 4px;
-  }
-  li .glyph {
-    flex: none;
-    width: 48px;
-    height: 48px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    background: rgba(47, 128, 237, 0.1);
-    font-size: 21px;
-    line-height: 1;
-  }
-  li .copy { flex: 1; min-width: 0; }
-  li .copy b { display: block; font-size: 16px; font-weight: 700; color: var(--ink); }
-  li .copy span { font-size: 14px; color: var(--muted); }
-  li .tick { flex: none; color: var(--green); font-size: 19px; line-height: 1; }
-
-  button {
-    width: 100%;
-    margin-top: 22px;
-    height: 56px;
-    border: 0;
-    border-radius: 16px;
-    background: var(--blue);
-    color: #fff;
-    font-family: inherit;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-    box-shadow: 0 8px 18px -8px rgba(47, 128, 237, 0.7);
-  }
-  button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 26px -10px rgba(47, 128, 237, 0.75); }
-  button:active:not(:disabled) { transform: translateY(0) scale(0.99); }
-  button:disabled { background: rgba(47, 128, 237, 0.45); cursor: not-allowed; box-shadow: none; }
-
-  .fine {
-    margin: 14px 0 0;
-    text-align: center;
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--faint);
-  }
-
-  .note {
-    margin-top: 16px;
-    padding: 14px 16px;
-    border-radius: 12px;
-    font-size: 13.5px;
-    line-height: 1.55;
-    display: none;
-  }
-  .note.show { display: block; }
-  .note.error { background: #fdecec; color: #a33a3a; border: 1px solid #f6cccc; }
-  .note.ok    { background: #e9f8ef; color: #1e7d47; border: 1px solid #c4ebd4; }
-  .note.info  { background: #eaf2fe; color: #1f5fb4; border: 1px solid #cfe0fa; }
-
-  .spinner {
-    display: inline-block;
-    width: 15px; height: 15px;
-    margin-right: 9px;
-    vertical-align: -2px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @media (prefers-reduced-motion: reduce) {
-    .spinner { animation: none; }
-    button { transition: none; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>MovaAI — Premium | Аплата падпіскі</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Віджэт bePaid. Форму карты малюе ён сам, у сваім iframe: нумар карты і
+         CVC ніколі не трапляюць у наш DOM і на наш хостынг — гэта патрабаванне
+         PCI DSS, без якога bePaid не падключыць краму. -->
+    <script src="https://js.bepaid.by/widget/be_gateway.js"></script>
+    <style>
+         :root {
+            --bg: #070708;
+            --card: #141416;
+            --line: rgba(255, 255, 255, 0.08);
+            --muted: #A1A1AA;
+            --muted2: #71717A;
+            --text: #FAFAFA;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+        
+        html {
+            scroll-behavior: smooth
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        a {
+            color: inherit
+        }
+        
+        button {
+            font-family: inherit
+        }
+        /* background orbs */
+        
+        .bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: var(--bg)
+        }
+        
+        .bg::before {
+            content: "";
+            position: absolute;
+            width: 900px;
+            height: 900px;
+            left: -200px;
+            top: -300px;
+            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.07), transparent 70%);
+            filter: blur(12px);
+        }
+        
+        .bg::after {
+            content: "";
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            right: -200px;
+            top: 200px;
+            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.05), transparent 70%);
+            filter: blur(12px);
+        }
+        
+        .bg-orb3 {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            left: 30%;
+            bottom: -300px;
+            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.04), transparent 70%);
+        }
+        
+        .container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 20px
+        }
+        
+        @media(min-width:768px) {
+            .container {
+                padding: 0 24px
+            }
+        }
+        /* Header */
+        
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(16px);
+            background: rgba(7, 7, 8, 0.78);
+            border-bottom: 1px solid var(--line);
+        }
+        
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            gap: 16px
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none
+        }
+        
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #FFFFFF, #A1A1AA);
+            display: grid;
+            place-items: center;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.18), 0 0 30px rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+        
+        .logo-mark span {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #000;
+            letter-spacing: -0.5px
+        }
+        
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.4px;
+            color: #fff
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+        
+        .badge-email {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .badge-email.show {
+            display: flex
+        }
+        
+        .lang-switch {
+            display: flex;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--line);
+            padding: 3px;
+            border-radius: 999px;
+            gap: 2px;
+        }
+        
+        .lang-btn {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: .2s;
+        }
+        
+        .lang-btn.active {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)
+        }
+        
+        /* Hero */
+        
+        .hero {
+            padding: 38px 0 18px;
+            text-align: center
+        }
+        
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #D4D4D8;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+        
+        .hero-eyebrow .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation: pulse 1.6s infinite
+        }
+        
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1
+            }
+            50% {
+                transform: scale(1.25);
+                opacity: 0.8
+            }
+        }
+        
+        .hero h1 {
+            margin: 18px auto 14px;
+            max-width: 760px;
+            font-size: 32px;
+            line-height: 1.08;
+            font-weight: 900;
+            letter-spacing: -1px;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fff;
+        }
+        
+        .hero h1 .grad {
+            background: linear-gradient(135deg, #FFFFFF 0%, #A1A1AA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            max-width: 620px;
+            margin: 0 auto;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        
+        /* Toggle */
+        
+        .toggle-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 26px 0 22px
+        }
+        
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            background: #111112;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4px;
+            border-radius: 999px;
+            gap: 4px;
+            position: relative;
+        }
+        
+        .toggle button {
+            position: relative;
+            z-index: 1;
+            padding: 10px 22px;
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: .25s;
+        }
+        
+        .toggle button.active {
+            color: #000
+        }
+        
+        .toggle-indicator {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            width: calc(50% - 4px);
+            background: #fff;
+            border-radius: 999px;
+            transition: transform .4s cubic-bezier(.22, 1, .36, 1);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.12);
+        }
+        
+        .toggle-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700
+        }
+        
+        /* Pricing */
+        
+        .pricing {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 26px
+        }
+        
+        @media(min-width:768px) {
+            .pricing {
+                grid-template-columns: 1fr 1.15fr;
+                gap: 18px;
+                align-items: stretch
+            }
+        }
+        
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            transition: transform .2s, border-color .2s, box-shadow .2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px)
+        }
+        
+        .card.monthly {
+            opacity: 0.92
+        }
+        
+        .card.yearly {
+            border: 1px solid transparent;
+            background: linear-gradient(var(--card), var(--card)) padding-box, linear-gradient(120deg, #FFFFFF, #A1A1AA, #FFFFFF) border-box;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+            transform-style: preserve-3d;
+        }
+        
+        .card.yearly::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 24px;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+            background-size: 200% 100%;
+            animation: shine 3s linear infinite;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        
+        @keyframes shine {
+            0% {
+                background-position: -200% 0
+            }
+            100% {
+                background-position: 200% 0
+            }
+        }
+        
+        .badge-save {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: #fff;
+            color: #000;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .card-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px
+        }
+        
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+        
+        .card-title .icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-size: 14px
+        }
+        
+        .card.monthly .icon {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff
+        }
+        
+        .card.yearly .icon {
+            background: #fff;
+            color: #000
+        }
+        
+        .card-desc {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            min-height: 38px
+        }
+        
+        .price-row {
+            display: flex;
+            align-items: end;
+            gap: 10px;
+            margin-bottom: 4px
+        }
+        
+        .price-main {
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -1.2px;
+            line-height: 1;
+            color: #fff
+        }
+        
+        .price-main small {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--muted)
+        }
+        
+        .price-old {
+            font-size: 14px;
+            color: var(--muted2);
+            text-decoration: line-through;
+            margin-bottom: 6px
+        }
+        
+        .price-per {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 14px
+        }
+        
+        .price-per b {
+            color: #fff
+        }
+        
+        .card-features {
+            list-style: none;
+            display: grid;
+            gap: 8px;
+            margin: 16px 0 18px
+        }
+        
+        .card-features li {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 13.5px;
+            color: #E4E4E7
+        }
+        
+        .card-features li .check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            display: grid;
+            place-items: center;
+            flex-shrink: 0
+        }
+        
+        .card-features li .check svg {
+            width: 12px;
+            height: 12px;
+            stroke: #fff
+        }
+        
+        .card.yearly .check {
+            background: #fff;
+            border-color: #fff
+        }
+        
+        .card.yearly .check svg {
+            stroke: #000
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            transition: .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:active {
+            transform: scale(0.98)
+        }
+        
+        .btn-primary {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            border: 1px solid #fff;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.12)
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.10);
+            border-color: rgba(255, 255, 255, 0.18)
+        }
+        
+        .card-selected {
+            outline: 1px solid #fff;
+            outline-offset: 2px
+        }
+        
+        .trust-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+            color: var(--muted2);
+            font-size: 11.5px
+        }
+        
+        /* Payment block */
+        
+        .payment-wrap {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 22px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .payment-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap
+        }
+        
+        .payment-head h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+        
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600
+        }
+        
+        .form-grid {
+            display: grid;
+            gap: 14px
+        }
+        
+        @media(min-width:640px) {
+            .form-grid.two {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+        
+        .field label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+            display: block
+        }
+        
+        .field input {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 12px;
+            background: #0F0F10;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 14.5px;
+            outline: none;
+            transition: .2s;
+        }
+        
+        .field input::placeholder {
+            color: var(--muted2)
+        }
+        
+        .field input:focus {
+            border-color: rgba(255, 255, 255, 0.28);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+            background: #141415
+        }
+        
+        .field input.invalid {
+            border-color: #fff;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.10)
+        }
+        
+        .field-hint {
+            font-size: 12px;
+            color: var(--muted2);
+            margin-top: 6px
+        }
+        
+        .field-hint.err {
+            color: #fff
+        }
+        
+        .pay-panel {
+            margin-top: 6px
+        }
+        
+        .card-form {
+            background: #0F0F10;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+        }
+        
+        .card-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+        
+        .cta {
+            margin-top: 16px;
+            width: 100%;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid #fff;
+            background: #fff;
+            color: #000;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: -0.2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            position: relative;
+            overflow: hidden;
+            transition: .2s;
+        }
+        
+        .cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+            background: #fff;
+            color: #000
+        }
+        
+        .cta:active {
+            transform: scale(0.99)
+        }
+        
+        .cta:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none
+        }
+        
+        .cta-sub {
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+            margin-top: 10px
+        }
+        
+        .cta-sub a {
+            color: #fff;
+            text-decoration: underline;
+            text-underline-offset: 3px
+        }
+        
+        .pay-icons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap
+        }
+        
+        .pay-icons span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: var(--muted)
+        }
+        
+        .pay-icons .brand {
+            width: 28px;
+            height: 18px;
+            border-radius: 4px;
+            background: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 9px;
+            font-weight: 900;
+            color: #000
+        }
+        
+        /* FAQ */
+        
+        .faq {
+            margin: 28px 0
+        }
+        
+        .faq h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin-bottom: 14px;
+            text-align: center
+        }
+        
+        .faq-list {
+            display: grid;
+            gap: 10px
+        }
+        
+        .faq-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            overflow: hidden
+        }
+        
+        .faq-q {
+            width: 100%;
+            text-align: left;
+            padding: 16px 18px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        
+        .faq-q .chev {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            display: grid;
+            place-items: center;
+            transition: .25s;
+            flex-shrink: 0
+        }
+        
+        .faq-item.open .chev {
+            transform: rotate(180deg);
+            background: #fff;
+            color: #000
+        }
+        
+        .faq-a {
+            padding: 0 18px 16px;
+            color: var(--muted);
+            font-size: 13.5px;
+            line-height: 1.6;
+            display: none
+        }
+        
+        .faq-item.open .faq-a {
+            display: block
+        }
+        
+        /* Footer */
+        
+        .footer {
+            border-top: 1px solid var(--line);
+            padding: 20px 0 28px;
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.25)
+        }
+        
+        .footer-grid {
+            display: grid;
+            gap: 14px;
+            font-size: 12.5px;
+            color: var(--muted);
+            line-height: 1.6
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap
+        }
+        
+        .footer-links a {
+            color: #D4D4D8;
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+            padding-bottom: 1px
+        }
+        
+        .support {
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            color: #000;
+            padding: 9px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none
+        }
+        
+        /* Modal */
+        
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 80;
+            padding: 20px;
+        }
+        
+        .modal-backdrop.show {
+            display: flex
+        }
+        
+        .modal {
+            width: min(520px, 100%);
+            background: #141416;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 24px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tick {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #fff;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.08), 0 12px 30px rgba(0, 0, 0, 0.35);
+            animation: tickPulse 1.6s ease infinite;
+        }
+        
+        .tick svg {
+            stroke: #000
+        }
+        
+        @keyframes tickPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.08), 0 12px 30px rgba(0, 0, 0, 0.35)
+            }
+            50% {
+                box-shadow: 0 0 0 16px rgba(255, 255, 255, 0.05), 0 16px 40px rgba(0, 0, 0, 0.45)
+            }
+        }
+        
+        .modal h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            color: #fff
+        }
+        
+        .modal p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 18px
+        }
+        
+        .modal-actions {
+            display: grid;
+            gap: 10px
+        }
+        
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #fff
+        }
+        
+        .btn-ghost:hover {
+            background: #fff;
+            color: #000
+        }
+        
+        .confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 90;
+            display: none
+        }
+        
+        .confetti-canvas.show {
+            display: block
+        }
+        
+        /* direct banner */
+        
+        .direct-banner {
+            display: none;
+            align-items: center;
+            gap: 14px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin: 0 0 18px;
+            backdrop-filter: blur(8px);
+        }
+        
+        .direct-banner.show {
+            display: flex
+        }
+        
+        .direct-banner-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            flex-shrink: 0;
+            background: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            color: #000;
+        }
+        
+        .direct-banner-text {
+            flex: 1;
+            min-width: 0
+        }
+        
+        .direct-banner-cta {
+            flex-shrink: 0;
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 12.5px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18)
+        }
+        
+        .field.with-icon {
+            position: relative
+        }
+        
+        .field.with-icon input {
+            padding-right: 42px
+        }
+        
+        .field-status {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-top: 11px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: none;
+            place-items: center;
+            font-size: 12px;
+        }
+        
+        .field-status.show {
+            display: grid
+        }
+        
+        .field-status.ok {
+            background: #fff;
+            border: 1px solid #fff;
+            color: #000
+        }
+        
+        .field-status.err {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff
+        }
+        
+        .field-status.load {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff
+        }
+        
+        .field input.found {
+            border-color: rgba(255, 255, 255, 0.28)!important;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08)!important;
+            background: #141415!important
+        }
+        
+        @keyframes shake {
+            0%,
+            100% {
+                transform: translateX(0)
+            }
+            20%,
+            60% {
+                transform: translateX(-4px)
+            }
+            40%,
+            80% {
+                transform: translateX(4px)
+            }
+        }
+        
+        /* toast */
+        
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%) translateY(80px);
+            background: #fff;
+            border: 1px solid #fff;
+            color: #000;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            transition: .35s;
+            z-index: 90;
+            max-width: 90vw;
+            text-align: center;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1
+        }
+        
+        /* utils */
+        
+        .muted {
+            color: var(--muted)
+        }
+        
+        .small {
+            font-size: 12px
+        }
+        
+        .hidden {
+            display: none !important
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
 </head>
+
 <body>
-<main>
-  <section class="hero">
-    <div class="stork">
-      <!-- Ляжыць побач з гэтым файлам: старонка выкладваецца на статычны
-           хостынг цалкам, разам з малюнкам, таму адносны шлях працуе на любым
-           дамене без правак. -->
-      <img src="stork.webp"
-           alt="Бусел — маскот MovaAI" width="100" height="100" />
+    <div class="bg">
+        <div class="bg-orb3"></div>
     </div>
-    <h1>Busel Premium</h1>
-    <p>Разблакуйце поўны доступ да MovaAI</p>
-  </section>
+    <canvas id="confetti" class="confetti-canvas"></canvas>
 
-  <section class="plan">
-    <h2>Прэміум доступ на 30 дзён</h2>
-    <div class="price">
-      <b id="price-amount">—</b>
-      <span>за 30 дзён</span>
+    <header class="header">
+        <div class="container">
+            <div class="header-inner">
+                <a class="logo" href="#" aria-label="MovaAI">
+                    <div class="logo-mark"><span>МА</span></div>
+                    <div class="logo-text">Mova<span style="font-weight:400">.</span><i>AI</i></div>
+                </a>
+                <div class="header-actions">
+                    <div id="emailBadge" class="badge-email">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/><circle cx="12" cy="12" r="10" stroke="rgba(16,185,129,0.35)"/></svg>
+                        <span id="badgeEmailText">Акаўнт: —</span>
+                    </div>
+                    <div class="lang-switch" role="tablist" aria-label="Language">
+                        <button class="lang-btn active" data-lang="be">БЕЛ</button>
+                        <button class="lang-btn" data-lang="ru">РУС</button>
+                        <button class="lang-btn" data-lang="en">ENG</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <div class="hero-eyebrow"><span class="dot"></span> <span id="eyebrowText">AI-трэнер беларускай мовы • Premium</span></div>
+            <h1 id="heroTitle">Актывуй <span class="grad">Premium</span> і размаўляй па-беларуску вольна з AI-трэнерам</h1>
+            <p id="heroSub">Неабмежаваная практыка, усе стылі маўлення — ад штодзённай размовы да дзелавой беларускай. Працуе на любым прыладзе.</p>
+        </section>
+
+        <!-- Secondary scenario: direct entry banner -->
+        <div class="direct-banner" id="directBanner" role="status" aria-live="polite">
+            <div class="direct-banner-icon">👋</div>
+            <div class="direct-banner-text">
+                <b id="directTitle">Вы зайшлі наўпрост — давайце знойдзем ваш акаўнт</b>
+                <span id="directText">Увядзіце Email, які вы выкарыстоўваеце ў дадатку MovaAI. Мы знойдзем ваш ID і актывуем Premium менавіта для вас.</span>
+            </div>
+            <button class="direct-banner-cta" id="directCta">Увесці Email ↓</button>
+        </div>
+
+        <div class="toggle-wrap">
+            <div class="toggle" id="periodToggle" role="tablist">
+                <div class="toggle-indicator" id="toggleIndicator" style="transform:translateX(100%)"></div>
+                <button data-period="monthly" id="btnMonthly">За месяц</button>
+                <button data-period="yearly" class="active" id="btnYearly">За год</button>
+            </div>
+            <span class="toggle-note" id="toggleSave">🔥 Эканомія 40%</span>
+        </div>
+
+        <section class="pricing" id="pricing">
+            <!-- Monthly -->
+            <div class="card monthly" id="cardMonthly" data-plan="monthly" tabindex="0" role="button" aria-label="Monthly plan">
+                <div class="card-label" id="labelMonthly">Базавы</div>
+                <div class="card-title"><span class="icon">◐</span> <span id="titleMonthly">1 Месяц</span></div>
+                <div class="card-desc" id="descMonthly">Той жа набор функцый, што і ў гадавым. Розніца толькі ў тэрміне і цане.</div>
+                <div class="price-row">
+                    <div class="price-main" id="priceMonthly">9,99 <small id="curMonthly">BYN</small></div>
+                </div>
+                <div class="price-per" id="perMonthly">аплата штомесяц</div>
+                <ul class="card-features" id="featMonthly">
+                    <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></span> <span>Неабмежаваны доступ да AI</span></li>
+                    <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></span> <span>Усе новыя галасы AI</span></li>
+                    <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></span> <span>Падтрымка 24/7</span></li>
+                </ul>
+                <button class="btn btn-secondary" data-select="monthly" id="btnSelectMonthly">Выбраць месячны</button>
+                <div class="trust-mini"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="8" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> <span id="trustMonthly">Аплата праз bePaid</span></div>
+            </div>
+
+            <!-- Yearly -->
+            <div class="card yearly card-selected" id="cardYearly" data-plan="yearly" tabindex="0" role="button" aria-label="Yearly plan">
+                <div class="badge-save">🔥 <span id="badgeSave">ЭКАНОМІЯ 40%</span></div>
+                <div class="card-label" style="color:#A5B4FC" id="labelYearly">Рэкамендуем • Хіт</div>
+                <div class="card-title"><span class="icon">✦</span> <span id="titleYearly">1 Год</span></div>
+                <div class="card-desc" id="descYearly">Тыя ж функцыі, што і ў месячным. Адрозненне — толькі лепшая цана за год.</div>
+                <div class="price-row">
+                    <div class="price-main" id="priceYearly">70,00 <small id="curYearly">BYN</small></div>
+                    <div class="price-old" id="oldYearly">119,88 BYN</div>
+                </div>
+                <div class="price-per"><span id="perYearly">усяго</span> <b id="perYearlyVal">5,83 BYN / мес.</b> <span id="perYearly2">пры аплаце за год</span></div>
+                <ul class="card-features" id="featYearly">
+                    <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></span> <span id="fy1">Неабмежаваны доступ да AI</span></li>
+                    <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></span> <span id="fy2">Усе новыя галасы AI</span></li>
+                    <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></span> <span id="fy3">Падтрымка 24/7</span></li>
+                </ul>
+                <button class="btn btn-primary" data-select="yearly" id="btnSelectYearly">Актываваць са зніжкай →</button>
+                <div class="trust-mini" style="color:#A5B4FC"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="8" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> <span id="trustYearly">Папулярны выбар • 78% карыстальнікаў</span></div>
+            </div>
+        </section>
+
+        <section class="payment-wrap" id="payment">
+            <div class="payment-head">
+                <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><circle cx="15" cy="14" r="1.6" fill="#6366F1"/></svg> <span id="payTitle">Афармленне аплаты</span></h3>
+                <div class="secure-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.9"><path d="M12 3l7 3v6c0 4-3 7-7 8-4-1-7-4-7-8V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg> <span id="secureText">PCI DSS • 3D-Secure</span></div>
+            </div>
+
+            <div class="form-grid two">
+                <div class="field with-icon">
+                    <label for="email" id="labelEmail">Email для актывацыі Premium *</label>
+                    <input id="email" type="email" placeholder="you@gmail.com" autocomplete="email" />
+                    <span class="field-status" id="emailStatus"></span>
+                    <!-- hidden mirrored field for the checkout request -->
+                    <input type="hidden" id="emailHidden" name="email">
+                    <div class="field-hint" id="emailHint">Той самы email, з якім вы ўваходзіце ў дадатак MovaAI.</div>
+                </div>
+                <div class="field">
+                    <label for="userid" id="labelUserId">Акаўнт</label>
+                    <input id="userid" type="text" placeholder="—" readonly style="opacity:0.8" />
+                    <div class="field-hint" id="hintUserId">Правяраецца аўтаматычна пасля ўводу Email.</div>
+                </div>
+            </div>
+
+            <div class="pay-panel" id="panelCard">
+                <div class="card-form">
+                    <div class="small muted" id="cardNote">Дадзеныя карты ўводзяцца ў абароненым акне bePaid і на наш сервер не трапляюць (PCI DSS). Visa, Mastercard, Белкарт, 3D-Secure.</div>
+                </div>
+            </div>
+
+            <button class="cta" id="ctaBtn">
+                <span id="ctaText">Аплаціць 70,00 BYN</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            </button>
+            <div class="cta-sub" id="ctaSub">Націскаючы, вы згаджаецеся з афертай і <a href="https://minekws.github.io/" target="_blank" rel="noopener" style="color:#A5B4FC">палітыкай прыватнасці</a>. Разавы плацёж, аўтападаўжэння няма.</div>
+            <div class="pay-icons">
+                <span><span class="brand">VISA</span> Visa</span>
+                <span><span class="brand" style="background:linear-gradient(90deg,#EB001B,#F79E1B);color:white">MC</span> Mastercard</span>
+                <span><span class="brand" style="background:#E30613;color:white">БК</span> Белкарт</span>
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><rect x="5" y="11" width="14" height="8" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> PCI DSS</span>
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="1.8"><path d="M12 3l7 4v5c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-4"/></svg> 3D-Secure</span>
+            </div>
+
+            <div style="margin-top:14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.18);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(99,102,241,0.18);display:grid;place-items:center;flex-shrink:0">💡</div>
+                <div style="font-size:12.5px;line-height:1.5;color:#CBD5E1"><b style="color:white" id="tipTitle">Падказка:</b> <span id="tipText">Аплата разавая — гэта не падпіска, грошы самі больш не спішуцца. Прэміум з’явіцца ў дадатку сам, як толькі банк падтвердзіць плацёж.</span></div>
+            </div>
+        </section>
+
+        <section class="faq">
+            <h3 id="faqTitle">Частыя пытанні</h3>
+            <div class="faq-list" id="faqList">
+                <!-- injected -->
+            </div>
+        </section>
+
+        <footer class="footer">
+            <!-- Реквизиты продавца, оферта, политика возврата и рабочий адрес
+                 поддержки — обязательное условие модерации магазина в bePaid:
+                 без них подключение не пройдёт. Ссылки ведут на сайт, который
+                 принадлежит нам; разделы #offer и #refund нужно опубликовать
+                 там до подачи заявки. -->
+            <div class="footer-grid">
+                <div>
+                    <div style="font-weight:800;letter-spacing:-0.3px;color:white;font-family:'Space Grotesk',sans-serif">MovaAI <span>•</span> ИИ-тренер белорусского языка</div>
+                    <div style="margin-top:8px">
+                        <span id="legal1">Оплату принимает ООО «бePaid» по поручению продавца. Реквизиты продавца — в публичной оферте.</span><br>
+                        <span id="legal2">Платежный провайдер: bePaid — PCI DSS Level 1. Возврат в течение 14 дней по запросу в поддержку.</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="footer-links">
+                        <a href="https://minekws.github.io/#offer" target="_blank" rel="noopener" id="linkTerms">Публичная оферта</a>
+                        <a href="https://minekws.github.io/" target="_blank" rel="noopener" id="linkPrivacy">Политика конфиденциальности</a>
+                        <a href="https://minekws.github.io/#refund" target="_blank" rel="noopener" id="linkRefund">Возврат средств</a>
+                        <a href="mailto:support@movaai.app">support@movaai.app</a>
+                    </div>
+                    <div style="margin-top:12px;font-size:11.5px">
+                        <span id="footNote">© 2026 MovaAI. Все права защищены. Оплата только в BYN. Разовый платеж, автопродления нет.</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Success Modal -->
+    <div class="modal-backdrop" id="modal">
+        <div class="modal">
+            <div class="tick"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8"><path d="M5 13l4 4L19 7"/></svg></div>
+            <h3 id="modalTitle">Аплата паспяховая! 🎉</h3>
+            <p id="modalText">Прэміум актываваны для вашага акаўнта. Адкрыйце дадатак MovaAI — падпіска з’явіцца сама на працягу хвіліны.</p>
+            <div class="modal-actions">
+                <!-- Кнопки «вернуться в приложение» здесь нет намеренно: диплинк
+                     обратно в приложение — это и есть та самая связка «оплата
+                     цифрового товара мимо Google Play», из-за которой снимают
+                     с публикации. Премиум включает вебхук, а не возврат. -->
+                <button class="btn btn-ghost" id="btnCloseModal" style="justify-content:center">Зразумела</button>
+            </div>
+        </div>
     </div>
-    <p class="sub">Разавы плацёж. Падпіска не афармляецца, грошы больш не спішуцц ggggggggggggggggggggggggggggggggggggggggggggg а.</p>
-  </section>
 
-  <ul>
-    <li>
-      <span class="glyph" aria-hidden="true">♾️</span>
-      <span class="copy"><b>Бясплатныя размовы</b><span>Размаўляйце з Буслам без абмежаванняў</span></span>
-      <span class="tick" aria-hidden="true">✓</span>
-    </li>
-    <li>
-      <span class="glyph" aria-hidden="true">❤️</span>
-      <span class="copy"><b>Бясконцыя жыцці</b><span>Практыкуйцеся без перапынкаў</span></span>
-      <span class="tick" aria-hidden="true">✓</span>
-    </li>
-    <li>
-      <span class="glyph" aria-hidden="true">🚫</span>
-      <span class="copy"><b>Без рэкламы</b><span>Вучыцеся без адцягванняў</span></span>
-      <span class="tick" aria-hidden="true">✓</span>
-    </li>
-    <li>
-      <span class="glyph" aria-hidden="true">⭐</span>
-      <span class="copy"><b>Прэміум-кантэнт</b><span>Доступ да эксклюзіўных урокаў</span></span>
-      <span class="tick" aria-hidden="true">✓</span>
-    </li>
-  </ul>
+    <div class="toast" id="toast"></div>
 
-  <button id="pay" type="button" disabled>Праверка спасылкі…</button>
+    <script>
+        /* ============================================================
+           БЛОК 0. КОНФИГУРАЦИЯ БЭКЕНДА
+           ------------------------------------------------------------
+           Две Edge-функции Supabase. Обе публичные (verify_jwt = false),
+           потому что у покупателя нет сессии Supabase в браузере:
+             bepaid-lookup — по email отвечает только «есть / нет».
+                             uuid наружу не отдаётся никогда: иначе любой
+                             желающий собрал бы карту email → uuid всей
+                             базы пользователей.
+             bepaid-token  — по email и тарифу создаёт платёж на стороне
+                             bePaid секретным ключом магазина и возвращает
+                             одноразовый токен. Сумма живёт на сервере,
+                             поэтому из браузера цену подменить нельзя.
+           ============================================================ */
+        const API = {
+            base: 'https://mjtdfpknlwoojsutewgv.supabase.co/functions/v1',
+            lookup: 'bepaid-lookup',
+            token: 'bepaid-token'
+        };
 
-  <p class="fine">
-    Разавы плацёж без аўтападаўжэння. Аплата праходзіць
-    на баку bePaid — мы не бачым даных вашай карты.
-  </p>
+        /* ============================================================
+           БЛОК 1. КОНФИГУРАЦИЯ ЦЕН (PRICES)
+           ------------------------------------------------------------
+           Витрина. Настоящая сумма списания берётся сервером из своих
+           переменных окружения и перепроверяется вебхуком — эти числа
+           и BEPAID_PRICE_*_MINOR меняются только вместе, иначе платёж
+           отклонится как amount_mismatch.
+           ============================================================ */
+        const PRICES = {
+            monthly: {
+                BYN: 9.99
+            },
+            yearly: {
+                BYN: 70.00
+            }
+        };
 
-  <div id="note" class="note" role="status" aria-live="polite"></div>
-</main>
+        /* ============================================================
+           БЛОК 2. МУЛЬТИЯЗЫЧНЫЕ ТЕКСТЫ (I18N)
+           ------------------------------------------------------------
+           Объект I18N хранит все тексты интерфейса для трёх языков:
+           be (белорусский), ru (русский), en (английский).
+           Некоторые поля — функции (например ctaPay), чтобы подставлять
+           динамические значения (сумму оплаты).
+           ============================================================ */
+        const I18N = {
+            be: {
+                langLabel: 'БЕЛ',
+                eyebrow: 'AI-трэнер беларускай мовы • Premium',
+                heroTitle: 'Актывуй <span class="grad">Premium</span> і размаўляй па-беларуску вольна з AI-трэнерам',
+                heroSub: 'Неабмежаваная практыка, усе стылі маўлення — ад штодзённай размовы да дзелавой беларускай. Працуе на любым прыладзе.',
+                toggleMonthly: 'За месяц',
+                toggleYearly: 'За год',
+                save: '🔥 Эканомія 40%',
+                labelMonthly: 'Базавы',
+                titleMonthly: '1 Месяц',
+                descMonthly: 'Той жа набор функцый, што і ў гадавым. Розніца толькі ў тэрміне і цане.',
+                labelYearly: 'Рэкамендуем • Хіт',
+                titleYearly: '1 Год',
+                descYearly: 'Тыя ж функцыі, што і ў месячным. Адрозненне — толькі лепшая цана за год.',
+                badgeSave: 'ЭКАНОМІЯ 40%',
+                forMonth: 'аплата штомесяц',
+                forYear1: 'усяго',
+                forYear2: 'пры аплаце за год',
+                perYearVal: (cur, per) => `${per} ${cur} / мес.`,
+                featM: ['Неабмежаваны доступ да AI', 'Усе новыя галасы AI', 'Падтрымка 24/7'],
+                featY: ['Неабмежаваны доступ да AI', 'Усе новыя галасы AI', 'Падтрымка 24/7'],
+                btnSelM: 'Выбраць месячны',
+                btnSelY: 'Актываваць са зніжкай →',
+                trustM: 'Аплата праз bePaid',
+                trustY: 'Папулярны выбар • 78% карыстальнікаў',
+                payTitle: 'Афармленне аплаты',
+                secure: 'PCI DSS • 3D-Secure',
+                labelEmail: 'Email для актывацыі Premium *',
+                emailHint: 'Той самы email, з якім вы ўваходзіце ў дадатак MovaAI.',
+                labelUid: 'Акаўнт',
+                hintUid: 'Правяраецца аўтаматычна пасля ўводу Email.',
+                cardNote: 'Дадзеныя карты ўводзяцца ў абароненым акне bePaid і на наш сервер не трапляюць (PCI DSS). Visa, Mastercard, Белкарт, 3D-Secure.',
+                tipTitle: 'Падказка:',
+                tipText: 'Аплата разавая — гэта не падпіска, грошы самі больш не спішуцца. Прэміум з’явіцца ў дадатку сам, як толькі банк падтвердзіць плацёж.',
+                ctaPay: (sum) => `Аплаціць ${sum}`,
+                ctaSub: 'Націскаючы, вы згаджаецеся з афертай і <a href="https://minekws.github.io/" target="_blank" rel="noopener" style="color:#A5B4FC">палітыкай прыватнасці</a>. Разавы плацёж, аўтападаўжэння няма.',
+                directTitle: 'Вы зайшлі наўпрост — давайце знойдзем ваш акаўнт',
+                directText: 'Увядзіце Email, які вы выкарыстоўваеце ў дадатку MovaAI. Мы знойдзем ваш ID і актывуем Premium менавіта для вас.',
+                directCta: 'Увесці Email ↓',
+                emailFound: '✓ Акаўнт знойдзены',
+                emailSearching: 'Пошук акаўнта...',
+                emailNotFound: 'Акаўнт не знойдзены — праверце email альбо стварыце акаўнт у дадатку',
+                emailHintDirect: 'Увядзіце Email з дадатку MovaAI — мы праверым, ці ёсць такі акаўнт.',
+                emailHintFound: 'Выдатна! Акаўнт знойдзены — можаце выбіраць тарыф і аплачваць.',
+                hintUidDirect: 'Правяраецца аўтаматычна пасля ўводу Email.',
+                hintUidApp: 'Правяраецца аўтаматычна пасля ўводу Email.',
+                faqTitle: 'Частыя пытанні',
+                faq: [{
+                    q: 'Як актывуецца падпіска?',
+                    a: 'Аўтаматычна. Пасля аплаты bePaid дасылае нашаму серверу пацвярджэнне, і Прэміум уключаецца для акаўнта з указаным email. Адкрыйце дадатак MovaAI — статус абновіцца сам. Звычайна гэта займае менш за хвіліну.'
+                }, {
+                    q: 'Ці бяспечная аплата?',
+                    a: 'Так. Нумар карты і CVC вы ўводзіце ў акне bePaid — PCI DSS Level 1. На нашу старонку і на наш сервер гэтыя дадзеныя не трапляюць увогуле. 3D-Secure абавязковы.'
+                }, {
+                    q: 'Гэта падпіска? Грошы будуць спісвацца самі?',
+                    a: 'Не. Гэта разавы плацёж за 30 дзён або за год. Аўтападаўжэння няма: калі тэрмін скончыцца, Прэміум проста выключыцца, пакуль вы не аплаціце зноў.'
+                }, {
+                    q: 'Як звязацца з падтрымкай?',
+                    a: 'Напішыце на support@movaai.app. Вяртанне сродкаў — на працягу 14 дзён па запыце.'
+                }],
+                linkTerms: 'Публічная аферта',
+                linkPrivacy: 'Палітыка прыватнасці',
+                linkRefund: 'Вяртанне сродкаў',
+                legal1: 'Аплату прымае ТАА «бeПэйд» (bePaid) па даручэнні прадаўца. Рэквізіты прадаўца — у публічнай аферце.',
+                legal2: 'Плацёжны правайдар: bePaid — PCI DSS Level 1. Вяртанне на працягу 14 дзён па запыце ў падтрымку.',
+                footNote: '© 2026 MovaAI. Усе правы абаронены. Аплата толькі ў BYN. Разавы плацёж, аўтападаўжэння няма.',
+                badgeAccount: 'Акаўнт:',
+                modalTitle: 'Аплата паспяховая! 🎉',
+                modalText: 'Прэміум актываваны для вашага акаўнта. Адкрыйце дадатак MovaAI — падпіска з’явіцца сама на працягу хвіліны.',
+                btnStay: 'Зразумела',
+                toastNeedEmail: 'Калі ласка, увядзіце карэктны email',
+                toastPayFailed: 'Не атрымалася пачаць аплату. Паспрабуйце яшчэ раз праз хвіліну.',
+                toastPayCancelled: 'Аплата скасавана',
+                payWithCard: 'Аплата картай'
+            },
+            ru: {
+                langLabel: 'РУС',
+                eyebrow: 'AI-тренер белорусского языка • Premium',
+                heroTitle: 'Активируй <span class="grad">Premium</span> и говори по-белорусски свободно с AI-тренером',
+                heroSub: 'Безлимитная практика, все стили речи — от разговорного до делового белорусского. Работает на любом устройстве.',
+                toggleMonthly: 'За месяц',
+                toggleYearly: 'За год',
+                save: '🔥 Выгода 40%',
+                labelMonthly: 'Базовый',
+                titleMonthly: '1 Месяц',
+                descMonthly: 'Тот же набор функций, что и в годовом. Разница только в сроке и цене.',
+                labelYearly: 'Рекомендуем • Хит',
+                titleYearly: '1 Год',
+                descYearly: 'Те же функции, что и в месячном. Отличие — только лучшая цена за год.',
+                badgeSave: 'ВЫГОДА 40%',
+                forMonth: 'оплата ежемесячно',
+                forYear1: 'всего',
+                forYear2: 'при оплате за год',
+                perYearVal: (cur, per) => `${per} ${cur} / мес.`,
+                featM: ['Безлимитный доступ к AI', 'Все новые голоса AI', 'Поддержка 24/7'],
+                featY: ['Безлимитный доступ к AI', 'Все новые голоса AI', 'Поддержка 24/7'],
+                btnSelM: 'Выбрать месячный',
+                btnSelY: 'Активировать со скидкой →',
+                trustM: 'Оплата через bePaid',
+                trustY: 'Популярный выбор • 78% пользователей',
+                payTitle: 'Оформление оплаты',
+                secure: 'PCI DSS • 3D-Secure',
+                labelEmail: 'Email для активации Premium *',
+                emailHint: 'Тот же email, с которым вы входите в приложение MovaAI.',
+                labelUid: 'Аккаунт',
+                hintUid: 'Проверяется автоматически после ввода Email.',
+                cardNote: 'Данные карты вводятся в защищенном окне bePaid и на наш сервер не попадают (PCI DSS). Visa, Mastercard, Белкарт, 3D-Secure.',
+                tipTitle: 'Подсказка:',
+                tipText: 'Оплата разовая — это не подписка, деньги сами больше не спишутся. Премиум появится в приложении сам, как только банк подтвердит платеж.',
+                ctaPay: (sum) => `Оплатить ${sum}`,
+                ctaSub: 'Нажимая, вы соглашаетесь с офертой и <a href="https://minekws.github.io/" target="_blank" rel="noopener" style="color:#A5B4FC">политикой конфиденциальности</a>. Разовая оплата, автопродления нет.',
+                directTitle: 'Вы зашли напрямую — давайте найдём ваш аккаунт',
+                directText: 'Введите Email, который вы используете в приложении MovaAI. Мы найдём ваш ID и активируем Premium именно для вас.',
+                directCta: 'Ввести Email ↓',
+                emailFound: '✓ Аккаунт найден',
+                emailSearching: 'Поиск аккаунта...',
+                emailNotFound: 'Аккаунт не найден — проверьте email или создайте аккаунт в приложении',
+                emailHintDirect: 'Введите Email из приложения MovaAI — мы проверим, есть ли такой аккаунт.',
+                emailHintFound: 'Отлично! Аккаунт найден — выбирайте тариф и оплачивайте.',
+                hintUidDirect: 'Проверяется автоматически после ввода Email.',
+                hintUidApp: 'Проверяется автоматически после ввода Email.',
+                faqTitle: 'Частые вопросы',
+                faq: [{
+                    q: 'Как активируется подписка?',
+                    a: 'Автоматически. После оплаты bePaid отправляет нашему серверу подтверждение, и Премиум включается для аккаунта с указанным email. Откройте приложение MovaAI — статус обновится сам. Обычно это занимает меньше минуты.'
+                }, {
+                    q: 'Безопасна ли оплата?',
+                    a: 'Да. Номер карты и CVC вы вводите в окне bePaid — PCI DSS Level 1. На нашу страницу и на наш сервер эти данные не попадают вообще. 3D-Secure обязателен.'
+                }, {
+                    q: 'Это подписка? Деньги будут списываться сами?',
+                    a: 'Нет. Это разовый платеж за 30 дней или за год. Автопродления нет: когда срок закончится, Премиум просто выключится, пока вы не оплатите снова.'
+                }, {
+                    q: 'Как связаться с поддержкой?',
+                    a: 'Напишите на support@movaai.app. Возврат средств — в течение 14 дней по запросу.'
+                }],
+                linkTerms: 'Публичная оферта',
+                linkPrivacy: 'Политика конфиденциальности',
+                linkRefund: 'Возврат средств',
+                legal1: 'Оплату принимает ООО «бePaid» по поручению продавца. Реквизиты продавца — в публичной оферте.',
+                legal2: 'Платежный провайдер: bePaid — PCI DSS Level 1. Возврат в течение 14 дней по запросу в поддержку.',
+                footNote: '© 2026 MovaAI. Все права защищены. Оплата только в BYN. Разовый платеж, автопродления нет.',
+                badgeAccount: 'Аккаунт:',
+                modalTitle: 'Оплата успешна! 🎉',
+                modalText: 'Премиум активирован для вашего аккаунта. Откройте приложение MovaAI — подписка появится сама в течение минуты.',
+                btnStay: 'Понятно',
+                toastNeedEmail: 'Пожалуйста, введите корректный email',
+                toastPayFailed: 'Не удалось начать оплату. Попробуйте еще раз через минуту.',
+                toastPayCancelled: 'Оплата отменена',
+                payWithCard: 'Оплата картой'
+            },
+            en: {
+                langLabel: 'ENG',
+                eyebrow: 'Belarusian AI Coach • Premium',
+                heroTitle: 'Unlock <span class="grad">Premium</span> and speak Belarusian fluently with your AI coach',
+                heroSub: 'Unlimited practice, every register — from casual conversation to business Belarusian. Works on any device.',
+                toggleMonthly: 'Monthly',
+                toggleYearly: 'Yearly',
+                save: '🔥 Save 40%',
+                labelMonthly: 'Starter',
+                titleMonthly: '1 Month',
+                descMonthly: 'Same feature set as Yearly. The only difference is the term and price.',
+                labelYearly: 'Recommended • Best value',
+                titleYearly: '1 Year',
+                descYearly: 'Same features as Monthly. The only difference is a better annual price.',
+                badgeSave: 'SAVE 40%',
+                forMonth: 'billed monthly',
+                forYear1: 'just',
+                forYear2: 'billed yearly',
+                perYearVal: (cur, per) => `${per} ${cur} / mo`,
+                featM: ['Unlimited AI access', 'All new AI voices', '24/7 support'],
+                featY: ['Unlimited AI access', 'All new AI voices', '24/7 support'],
+                btnSelM: 'Choose Monthly',
+                btnSelY: 'Activate with discount →',
+                trustM: 'Secured by bePaid',
+                trustY: 'Most popular • 78% choose Yearly',
+                payTitle: 'Checkout',
+                secure: 'PCI DSS • 3D-Secure',
+                labelEmail: 'Email for Premium activation *',
+                emailHint: 'The same email you sign in with in the MovaAI app.',
+                labelUid: 'Account',
+                hintUid: 'Checked automatically once you enter your Email.',
+                cardNote: 'Card details are entered in bePaid’s secure window and never reach our servers (PCI DSS). Visa, Mastercard, Belkart, 3D-Secure.',
+                tipTitle: 'Tip:',
+                tipText: 'This is a one-off payment, not a subscription — nothing will be charged again. Premium appears in the app by itself once the bank confirms.',
+                ctaPay: (sum) => `Pay ${sum}`,
+                ctaSub: 'By clicking you agree to the offer and the <a href="https://minekws.github.io/" target="_blank" rel="noopener" style="color:#A5B4FC">Privacy Policy</a>. One-off payment, no auto-renewal.',
+                directTitle: 'You came directly — let’s find your account',
+                directText: 'Enter the Email you use in the MovaAI app. We’ll look up your ID and activate Premium for you.',
+                directCta: 'Enter Email ↓',
+                emailFound: '✓ Account found',
+                emailSearching: 'Looking up account...',
+                emailNotFound: 'Account not found — check email or create an account in the app',
+                emailHintDirect: 'Enter your MovaAI app Email — we’ll check whether that account exists.',
+                emailHintFound: 'Great! Account found — pick a plan and pay.',
+                hintUidDirect: 'Checked automatically once you enter your Email.',
+                hintUidApp: 'Checked automatically once you enter your Email.',
+                faqTitle: 'FAQ',
+                faq: [{
+                    q: 'How is Premium activated?',
+                    a: 'Automatically. After payment bePaid notifies our server and Premium is switched on for the account with that email. Open the MovaAI app — the status updates by itself, usually in under a minute.'
+                }, {
+                    q: 'Is payment safe?',
+                    a: 'Yes. You type your card number and CVC into bePaid’s own window — PCI DSS Level 1. That data never reaches this page or our servers at all. 3D-Secure is required.'
+                }, {
+                    q: 'Is this a subscription? Will I be charged again?',
+                    a: 'No. It is a one-off payment for 30 days or for a year. There is no auto-renewal: when the term ends Premium simply switches off until you pay again.'
+                }, {
+                    q: 'How to contact support?',
+                    a: 'Email support@movaai.app. Refunds within 14 days on request.'
+                }],
+                linkTerms: 'Terms of Service',
+                linkPrivacy: 'Privacy Policy',
+                linkRefund: 'Refunds',
+                legal1: 'Payments are processed by bePaid on behalf of the seller. Seller details are in the public offer.',
+                legal2: 'Payment provider: bePaid — PCI DSS Level 1. Refund within 14 days on request.',
+                footNote: '© 2026 MovaAI. All rights reserved. BYN only. One-off payment, no auto-renewal.',
+                badgeAccount: 'Account:',
+                modalTitle: 'Payment successful! 🎉',
+                modalText: 'Premium is activated for your account. Open the MovaAI app — your subscription will appear by itself within a minute.',
+                btnStay: 'Got it',
+                toastNeedEmail: 'Please enter a valid email',
+                toastPayFailed: 'Could not start payment. Try again in a minute.',
+                toastPayCancelled: 'Payment cancelled',
+                payWithCard: 'Pay with card'
+            }
+        };
 
-<script>
-(function () {
-  "use strict";
+        /* ============================================================
+           БЛОК 3. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+           ------------------------------------------------------------
+           Переменные состояния. LANG — язык, CURRENCY — валюта,
+           SELECTED — выбранный тариф,
+           IS_DIRECT — флаг прямого входа без параметров из приложения.
+           $() и $$() — короткие обёртки для поиска по DOM.
+           ============================================================ */
+        let LANG = 'be';
+        // Магазин bePaid беларуский и принимает BYN. Язык интерфейса валюту не
+        // меняет: показать цену в USD, а списать в BYN — значит обмануть
+        // покупателя и получить amount_mismatch на вебхуке.
+        let CURRENCY = 'BYN';
+        const CURRENCY_BY_LANG = {
+            be: 'BYN',
+            ru: 'BYN',
+            en: 'BYN'
+        };
+        let SELECTED = 'yearly';
+        let IS_DIRECT = false;
+        // Найден ли аккаунт под введённым email. Сам uuid браузеру не выдаётся —
+        // его подставляет bepaid-token на сервере.
+        let ACCOUNT_FOUND = false;
 
-  // Токен плацяжу ствараецца Edge-функцыяй, бо запыт токена падпісваецца
-  // САКРЭТНЫМ ключом крамы — на статычным хостынгу ён быў бы бачны ў DevTools.
-  // Поўны адрас, а не адносны шлях: гэтая старонка ляжыць на звычайным
-  // статычным хостынгу (не на *.supabase.co), таму хост трэба назваць прама.
-  // Домен старонкі мусіць быць у BEPAID_ALLOWED_ORIGINS, інакш браўзер
-  // заблакуе запыт па CORS.
-  var CONFIG = {
-    tokenEndpoint: "https://mjtdfpknlwoojsutewgv.supabase.co/functions/v1/bepaid-token",
-    // Паказваецца толькі як цэннік; сапраўдную суму задае сервер
-    // (BEPAID_PREMIUM_AMOUNT_MINOR). Трымайце гэтыя два значэнні аднолькавымі.
-    displayPrice: "10,00 BYN"
-  };
+        const $ = s => document.querySelector(s);
+        const $$ = s => [...document.querySelectorAll(s)];
 
-  var payButton = document.getElementById("pay");
-  var noteBox = document.getElementById("note");
-  var userId = "";
-
-  function note(kind, text) {
-    noteBox.className = "note show " + kind;
-    noteBox.textContent = text;
-  }
-
-  function clearNote() {
-    noteBox.className = "note";
-    noteBox.textContent = "";
-  }
-
-  function busy(isBusy, label) {
-    payButton.disabled = isBusy;
-    payButton.innerHTML = isBusy
-      ? '<span class="spinner"></span>' + label
-      : label;
-  }
-
-  document.getElementById("price-amount").textContent = CONFIG.displayPrice;
-
-  // user_id прыходзіць з дадатка: ?user_id=<uuid профілю Supabase>.
-  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  userId = (new URLSearchParams(window.location.search).get("user_id") || "").trim();
-
-  if (!UUID.test(userId)) {
-    payButton.textContent = "Спасылка несапраўдная";
-    note("error", "Адкрыйце гэтую старонку праз кнопку «Актываваць Прэміум» у дадатку MovaAI — інакш мы не ведаем, каму залічыць падпіску.");
-    return;
-  }
-
-  if (typeof window.BeGateway !== "function") {
-    payButton.textContent = "Плацяжы недаступныя";
-    note("error", "Не ўдалося загрузіць плацёжны віджэт. Праверце злучэнне і абнавіце старонку.");
-    return;
-  }
-
-  busy(false, "Актываваць Прэміум");
-  payButton.disabled = false;
-
-  function openWidget(token, checkoutUrl) {
-    new BeGateway({
-      checkout_url: checkoutUrl || "https://checkout.bepaid.by",
-      token: token,
-      // Віджэт адкрываецца ва ўбудаваным iframe паверх старонкі.
-      checkout: { iframe: true },
-      closeWidget: function (status) {
-        busy(false, "Актываваць Прэміум");
-
-        if (status === "successful") {
-          // Плацёж пацверджаны банкам, але Premium уключае вебхук на сэрвэры,
-          // таму просім карыстальніка вярнуцца ў дадатак, а не абяцаем доступ.
-          note("ok", "Дзякуй! Плацёж прыняты. Вярніцеся ў дадатак — Прэміум з’явіцца цягам хвіліны.");
-          payButton.disabled = true;
-          payButton.textContent = "Аплачана";
-          return;
+        /* ============================================================
+           БЛОК 4. УТИЛИТЫ: ЦЕНЫ И ФОРМАТИРОВАНИЕ
+           ------------------------------------------------------------
+           formatPrice() — форматирует число в цену (запятая для BYN).
+           getPrices()   — актуальные цены для текущей валюты + расчёты.
+           ============================================================ */
+        function formatPrice(n, cur) {
+            if (cur === 'BYN') return n.toFixed(2).replace('.', ',');
+            return n.toFixed(2);
         }
-        if (status === "pending" || status === "redirected") {
-          note("info", "Плацёж яшчэ апрацоўваецца. Прэміум уключыцца аўтаматычна, як толькі банк пацвердзіць аплату.");
-          return;
-        }
-        if (status === "failed" || status === "error") {
-          note("error", "Плацёж не прайшоў. Праверце даныя карты або паспрабуйце іншую.");
-          return;
-        }
-        // null — карыстальнік проста зачыніў акно віджэта.
-        clearNote();
-      }
-    }).createWidget();
-  }
 
-  payButton.addEventListener("click", function () {
-    clearNote();
-    busy(true, "Рыхтуем аплату…");
-
-    fetch(CONFIG.tokenEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId })
-    })
-      .then(function (response) {
-        return response.json().catch(function () { return {}; })
-          .then(function (data) { return { ok: response.ok, data: data }; });
-      })
-      .then(function (result) {
-        if (!result.ok || !result.data.token) {
-          var reason = result.data && result.data.error === "unknown_user"
-            ? "Профіль не знойдзены. Увайдзіце ў дадатак і адкрыйце аплату зноў."
-            : "Не ўдалося пачаць аплату. Паспрабуйце яшчэ раз праз хвіліну.";
-          busy(false, "Актываваць Прэміум");
-          note("error", reason);
-          return;
+        function getPrices() {
+            return {
+                monthly: PRICES.monthly[CURRENCY],
+                yearly: PRICES.yearly[CURRENCY],
+                yearlyOld: PRICES.monthly[CURRENCY] * 12,
+                perMonth: (PRICES.yearly[CURRENCY] / 12)
+            };
         }
-        openWidget(result.data.token, result.data.checkout_url);
-      })
-      .catch(function () {
-        busy(false, "Актываваць Прэміум");
-        note("error", "Няма сувязі з сэрверам. Праверце інтэрнэт і паспрабуйце зноў.");
-      });
-  });
-})();
-</script>
+
+        /* ============================================================
+           БЛОК 5. РАЗБОР URL-ПАРАМЕТРОВ (parseURL)
+           ------------------------------------------------------------
+           Читает query-параметры: email, lang.
+           user_id из ссылки больше не принимается: кто угодно мог бы
+           подставить чужой uuid и подарить премиум чужому аккаунту.
+           Владельца платежа определяет сервер по email.
+           ============================================================ */
+        function parseURL() {
+            const p = new URLSearchParams(location.search);
+            const email = p.get('email');
+            const lang = p.get('lang');
+            if (lang && ['be', 'ru', 'en'].includes(lang)) {
+                LANG = lang;
+            } else {
+                const nav = (navigator.language || '').toLowerCase();
+                if (nav.startsWith('ru')) LANG = 'ru';
+                else if (nav.startsWith('en')) LANG = 'en';
+                else LANG = 'be';
+            }
+            CURRENCY = CURRENCY_BY_LANG[LANG];
+
+            // Email из ссылки — только подсказка в поле. Он всё равно пройдёт
+            // проверку через bepaid-lookup, как если бы его набрали руками.
+            IS_DIRECT = !email;
+            if (email) {
+                $('#email').value = email;
+                $('#emailHidden').value = email;
+                $('#badgeEmailText').textContent = `${I18N[LANG].badgeAccount} ${email}`;
+                $('#emailBadge').classList.add('show');
+            }
+        }
+
+        /* ============================================================
+           БЛОК 6. ПРИМЕНЕНИЕ ЯЗЫКА (applyLang)
+           ------------------------------------------------------------
+           Рендерит на страницу тексты выбранного языка, обновляет
+           цены, валюту, FAQ и кнопку оплаты.
+           ============================================================ */
+        function applyLang() {
+            const t = I18N[LANG];
+            CURRENCY = CURRENCY_BY_LANG[LANG];
+            // header
+            $$('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === LANG));
+            document.documentElement.lang = LANG;
+            $('#eyebrowText').textContent = t.eyebrow;
+            $('#heroTitle').innerHTML = t.heroTitle;
+            $('#heroSub').textContent = t.heroSub;
+            $('#btnMonthly').textContent = t.toggleMonthly;
+            $('#btnYearly').textContent = t.toggleYearly;
+            $('#toggleSave').textContent = t.save;
+            // direct banner
+            $('#directTitle').textContent = t.directTitle;
+            $('#directText').textContent = t.directText;
+            $('#directCta').textContent = t.directCta;
+            $('#directBanner').classList.toggle('show', IS_DIRECT);
+            if (IS_DIRECT) {
+                $('#hintUserId').textContent = t.hintUidDirect;
+                const ev = $('#email').value.trim();
+                $('#emailHint').textContent = (ev && ACCOUNT_FOUND) ? t.emailHintFound : t.emailHintDirect;
+            }
+            // cards
+            $('#labelMonthly').textContent = t.labelMonthly;
+            $('#titleMonthly').textContent = t.titleMonthly;
+            $('#descMonthly').textContent = t.descMonthly;
+            $('#labelYearly').textContent = t.labelYearly;
+            $('#titleYearly').textContent = t.titleYearly;
+            $('#descYearly').textContent = t.descYearly;
+            $('#badgeSave').textContent = t.badgeSave;
+            $('#perMonthly').textContent = t.forMonth;
+            $('#perYearly').textContent = t.forYear1;
+            $('#perYearly2').textContent = t.forYear2;
+            // features
+            const fm = t.featM,
+                fy = t.featY;
+            $$('#featMonthly li span:last-child').forEach((el, i) => el.textContent = fm[i] || el.textContent);
+            $('#fy1').textContent = fy[0];
+            $('#fy2').textContent = fy[1];
+            $('#fy3').textContent = fy[2];
+            $('#btnSelectMonthly').textContent = t.btnSelM;
+            $('#btnSelectYearly').textContent = t.btnSelY;
+            $('#trustMonthly').textContent = t.trustM;
+            $('#trustYearly').textContent = t.trustY;
+            // payment
+            $('#payTitle').textContent = t.payTitle;
+            $('#secureText').textContent = t.secure;
+            $('#labelEmail').textContent = t.labelEmail;
+            if (IS_DIRECT) {
+                $('#hintUserId').textContent = t.hintUidDirect;
+                const ev2 = $('#email').value.trim();
+                $('#emailHint').textContent = (ev2 && ACCOUNT_FOUND) ? t.emailHintFound : t.emailHintDirect;
+            } else {
+                $('#emailHint').textContent = t.emailHint;
+                $('#hintUserId').textContent = t.hintUidApp || t.hintUid;
+            }
+            $('#labelUserId').textContent = t.labelUid;
+            $('#cardNote').textContent = t.cardNote;
+            $('#tipText').textContent = t.tipText;
+            $('#ctaSub').innerHTML = t.ctaSub;
+            $('#faqTitle').textContent = t.faqTitle;
+            $('#linkTerms').textContent = t.linkTerms;
+            $('#linkPrivacy').textContent = t.linkPrivacy;
+            $('#linkRefund').textContent = t.linkRefund;
+            $('#legal1').textContent = t.legal1;
+            $('#legal2').textContent = t.legal2;
+            $('#footNote').textContent = t.footNote;
+            $('#modalTitle').textContent = t.modalTitle;
+            $('#modalText').textContent = t.modalText;
+            $('#btnCloseModal').textContent = t.btnStay;
+            // badge
+            const emailVal = $('#email').value.trim();
+            if (emailVal) {
+                $('#badgeEmailText').textContent = `${t.badgeAccount} ${emailVal}`;
+                $('#emailBadge').classList.add('show');
+            } else {
+                const p = new URLSearchParams(location.search);
+                if (!p.get('email')) $('#emailBadge').classList.remove('show');
+            }
+            updatePrices(true);
+            renderFAQ();
+            updateCTA();
+        }
+
+        /* ============================================================
+           БЛОК 7. ОБНОВЛЕНИЕ ЦЕН (updatePrices / animatePrice)
+           ------------------------------------------------------------
+           Пересчитывает и анимирует цены на карточках при смене
+           валюты или языка.
+           ============================================================ */
+        function updatePrices(instant = false) {
+            const p = getPrices();
+            const cur = CURRENCY;
+            animatePrice($('#priceMonthly'), `${formatPrice(p.monthly,cur)} <small>${cur}</small>`, instant);
+            animatePrice($('#priceYearly'), `${formatPrice(p.yearly,cur)} <small>${cur}</small>`, instant);
+            $('#oldYearly').textContent = `${formatPrice(p.yearlyOld,cur)} ${cur}`;
+            $('#perYearlyVal').textContent = I18N[LANG].perYearVal(cur, formatPrice(p.perMonth, cur));
+        }
+
+        function animatePrice(el, html, instant) {
+            if (instant) {
+                el.innerHTML = html;
+                return;
+            }
+            el.style.transition = 'transform .18s, opacity .18s';
+            el.style.transform = 'translateY(-8px)';
+            el.style.opacity = '0.2';
+            setTimeout(() => {
+                el.innerHTML = html;
+                el.style.transform = 'translateY(8px)';
+                el.style.opacity = '0';
+                requestAnimationFrame(() => {
+                    el.style.transform = 'translateY(0)';
+                    el.style.opacity = '1';
+                });
+            }, 180);
+        }
+
+        /* ============================================================
+           БЛОК 8. FAQ (renderFAQ)
+           ------------------------------------------------------------
+           Строит список вопросов/ответов из I18N и добавляет
+           обработчики раскрытия/сворачивания.
+           ============================================================ */
+        function renderFAQ() {
+            const list = $('#faqList');
+            list.innerHTML = '';
+            I18N[LANG].faq.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = 'faq-item' + (i === 0 ? ' open' : '');
+                div.innerHTML = `
+                    <button class="faq-q">${item.q} <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span></button>
+                    <div class="faq-a">${item.a}</div>
+                `;
+                const btn = div.querySelector('.faq-q');
+                btn.addEventListener('click', () => {
+                    const open = div.classList.contains('open');
+                    $$('.faq-item').forEach(x => x.classList.remove('open'));
+                    if (!open) div.classList.add('open');
+                });
+                list.appendChild(div);
+            });
+        }
+
+        /* ============================================================
+           БЛОК 9. ОБНОВЛЕНИЕ КНОПКИ ОПЛАТЫ (updateCTA)
+           ------------------------------------------------------------
+           Обновляет текст кнопки с актуальной суммой и валютой
+           в зависимости от выбранного тарифа.
+           ============================================================ */
+        function updateCTA() {
+            const p = getPrices();
+            const cur = CURRENCY;
+            const amount = SELECTED === 'yearly' ? `${formatPrice(p.yearly,cur)} ${cur}` : `${formatPrice(p.monthly,cur)} ${cur}`;
+            $('#ctaText').textContent = I18N[LANG].ctaPay(amount);
+        }
+
+        /* ============================================================
+           БЛОК 10. ПРОВЕРКА АККАУНТА ПО EMAIL
+           ------------------------------------------------------------
+           — setEmailStatus():   рисует статус-индикатор поля email
+           — lookupAccount():    спрашивает у bepaid-lookup, существует
+                                 ли аккаунт с таким email
+           Функция отвечает только «есть / нет». uuid остаётся на
+           сервере: страница им не пользуется, а раздавать его наружу
+           значило бы позволить любому желающему проверить, кто из
+           знакомых зарегистрирован, и собрать карту email → uuid.
+           ============================================================ */
+        function setEmailStatus(state, msg) {
+            const el = $('#emailStatus');
+            const input = $('#email');
+            el.className = 'field-status';
+            if (state === 'loading') {
+                el.classList.add('show', 'load');
+                el.innerHTML = '<span style="width:14px;height:14px;border:2px solid rgba(99,102,241,0.25);border-top-color:#6366F1;border-radius:50%;display:inline-block;animation:spin .6s linear infinite"></span>';
+                input.classList.remove('found', 'invalid');
+            } else if (state === 'ok') {
+                el.classList.add('show', 'ok');
+                el.innerHTML = '✓';
+                input.classList.add('found');
+                input.classList.remove('invalid');
+            } else if (state === 'err') {
+                el.classList.add('show', 'err');
+                el.innerHTML = '✕';
+                input.classList.remove('found');
+                input.classList.add('invalid');
+            } else {
+                el.classList.remove('show', 'ok', 'err', 'load');
+                el.innerHTML = '';
+                if (msg === 'clear') {
+                    input.classList.remove('found', 'invalid');
+                }
+            }
+        }
+
+        /* Возвращает true / false / null.
+           null — не «не найден», а «спросить не удалось» (сеть, 500).
+           Разница важна: на «не найден» мы говорим человеку исправить
+           email, а на null — предлагаем повторить, потому что его email
+           может быть совершенно правильным. */
+        async function lookupAccount(email) {
+            try {
+                const res = await fetch(`${API.base}/${API.lookup}`, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                return data.found === true;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /* ============================================================
+           БЛОК 11. ВЫБОР ТАРИФА (selectPlan)
+           ------------------------------------------------------------
+           Меняет активный тариф (monthly/yearly), обновляет стили
+           карточек, кнопок, переключателя и сумму в CTA.
+           ============================================================ */
+        function selectPlan(plan) {
+            SELECTED = plan;
+            $('#cardMonthly').classList.toggle('card-selected', plan === 'monthly');
+            $('#cardYearly').classList.toggle('card-selected', plan === 'yearly');
+            $$('[data-select]').forEach(b => {
+                const isSel = b.dataset.select === plan;
+                b.className = isSel ? 'btn btn-primary' : 'btn btn-secondary';
+                if (b.dataset.select === 'yearly') {
+                    b.textContent = isSel ? I18N[LANG].btnSelY : I18N[LANG].btnSelY.replace('→', '');
+                } else {
+                    b.textContent = isSel ? I18N[LANG].btnSelM + ' ✓' : I18N[LANG].btnSelM;
+                }
+            });
+            $('#btnMonthly').classList.toggle('active', plan === 'monthly');
+            $('#btnYearly').classList.toggle('active', plan === 'yearly');
+            $('#toggleIndicator').style.transform = plan === 'yearly' ? 'translateX(100%)' : 'translateX(0)';
+            updateCTA();
+        }
+
+        /* ============================================================
+           БЛОК 12. ВАЛИДАЦИЯ EMAIL
+           ------------------------------------------------------------
+           Форматирования и проверки карты здесь нет и не должно быть:
+           поля карты рисует виджет bePaid в своём iframe. Наш код их
+           не видит — в этом и смысл PCI DSS.
+           ============================================================ */
+        function isEmailValid(e) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+        }
+
+        /* ============================================================
+           БЛОК 13. ТОСТ-УВЕДОМЛЕНИЯ (showToast)
+           ------------------------------------------------------------
+           Показывает всплывающее сообщение на 2.6 секунды.
+           ============================================================ */
+        function showToast(msg) {
+            const t = $('#toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._tm);
+            t._tm = setTimeout(() => t.classList.remove('show'), 2600);
+        }
+
+        /* ============================================================
+           БЛОК 14. УСПЕШНАЯ ОПЛАТА (triggerSuccess + confetti)
+           ------------------------------------------------------------
+           Показывает модалку и конфетти. Это только уведомление:
+           премиум включает вебхук bePaid на сервере, а не эта функция.
+           Поэтому текст обещает не «уже активно», а «появится само» —
+           банк подтверждает платёж асинхронно.
+           ============================================================ */
+        function triggerSuccess() {
+            const t = I18N[LANG];
+            const email = $('#email').value.trim();
+            $('#modalTitle').textContent = t.modalTitle;
+            $('#modalText').textContent = email
+                ? `${t.modalText} (${email})`
+                : t.modalText;
+            launchConfetti();
+            $('#modal').classList.add('show');
+        }
+
+        function launchConfetti() {
+            const canvas = $('#confetti');
+            canvas.classList.add('show');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width = innerWidth,
+                H = canvas.height = innerHeight;
+            const colors = ['#FFFFFF', '#CCCCCC', '#888888', '#EEEEEE', '#AAAAAA', '#FFFFFF'];
+            const parts = [];
+            for (let i = 0; i < 140; i++) {
+                parts.push({
+                    x: W / 2 + (Math.random() - 0.5) * 200,
+                    y: H / 2 - 80 + (Math.random() - 0.5) * 40,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: -Math.random() * 12 - 4,
+                    r: Math.random() * 7 + 4,
+                    c: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * Math.PI,
+                    vr: (Math.random() - 0.5) * 0.3,
+                    shape: Math.random() < 0.33 ? 'rect' : Math.random() < 0.66 ? 'circle' : 'tri'
+                });
+            }
+            let t = 0;
+
+            function frame() {
+                t++;
+                ctx.clearRect(0, 0, W, H);
+                parts.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.32;
+                    p.vx *= 0.99;
+                    p.rot += p.vr;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot);
+                    ctx.fillStyle = p.c;
+                    if (p.shape === 'rect') ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.6);
+                    else if (p.shape === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, p.r / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        ctx.beginPath();
+                        ctx.moveTo(0, -p.r / 2);
+                        ctx.lineTo(p.r / 2, p.r / 2);
+                        ctx.lineTo(-p.r / 2, p.r / 2);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                });
+                if (t < 220) requestAnimationFrame(frame);
+                else {
+                    canvas.classList.remove('show');
+                    ctx.clearRect(0, 0, W, H);
+                }
+            }
+            requestAnimationFrame(frame);
+        }
+
+        /* ============================================================
+           БЛОК 15. 3D-НАКЛОН ГОДОВОЙ КАРТЫ (initTilt)
+           ------------------------------------------------------------
+           Добавляет лёгкий 3D-эффект наклона карточки при наведении
+           мыши на десктопе.
+           ============================================================ */
+        function initTilt() {
+            const card = $('#cardYearly');
+            function onMove(e) {
+                if (innerWidth < 768) return;
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                card.style.transform = `perspective(900px) rotateY(${x*8}deg) rotateX(${-y*8}deg) translateY(-2px)`;
+            }
+            function onLeave() {
+                card.style.transform = 'perspective(900px) rotateY(0) rotateX(0)';
+            }
+            card.addEventListener('mousemove', onMove);
+            card.addEventListener('mouseleave', onLeave);
+        }
+
+        /* ============================================================
+           БЛОК 16. ИНИЦИАЛИЗАЦИЯ И ОБРАБОТЧИКИ СОБЫТИЙ
+           ------------------------------------------------------------
+           Запускается после загрузки DOM:
+           — парсит URL, применяет язык, выбирает годовой тариф;
+           — вешает обработчики на переключатель языка, тарифы,
+             баннер прямого входа, проверку email,
+             кнопку оплаты и модальное окно.
+           ============================================================ */
+        document.addEventListener('DOMContentLoaded', () => {
+            parseURL();
+            applyLang();
+            selectPlan('yearly');
+            initTilt();
+
+            // --- переключатель языка ---
+            $$('.lang-btn').forEach(b => b.addEventListener('click', () => {
+                LANG = b.dataset.lang;
+                applyLang();
+                const url = new URL(location.href);
+                url.searchParams.set('lang', LANG);
+                history.replaceState(null, '', url);
+                showToast(LANG === 'be' ? 'Мова: Беларуская' : LANG === 'ru' ? 'Язык: Русский' : 'Language: English');
+            }));
+
+            // --- период / карточки тарифов ---
+            $('#btnMonthly').addEventListener('click', () => selectPlan('monthly'));
+            $('#btnYearly').addEventListener('click', () => selectPlan('yearly'));
+            $('#cardMonthly').addEventListener('click', () => selectPlan('monthly'));
+            $('#cardYearly').addEventListener('click', () => selectPlan('yearly'));
+            $('#cardMonthly').addEventListener('keydown', e => {
+                if (e.key === 'Enter') selectPlan('monthly');
+            });
+            $('#cardYearly').addEventListener('keydown', e => {
+                if (e.key === 'Enter') selectPlan('yearly');
+            });
+            $$('[data-select]').forEach(b => b.addEventListener('click', e => {
+                e.stopPropagation();
+                selectPlan(b.dataset.select);
+            }));
+
+            // --- баннер прямого входа ---
+            $('#directCta').addEventListener('click', () => {
+                $('#email').focus();
+                $('#email').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                $('#email').style.boxShadow = '0 0 0 3px rgba(99,102,241,0.25)';
+                setTimeout(() => $('#email').style.boxShadow = '', 900);
+            });
+            if (IS_DIRECT) {
+                setTimeout(() => $('#email').focus(), 600);
+            }
+
+            // --- проверка аккаунта по email ---
+            let emailDebounce = null;
+            $('#email').addEventListener('input', () => {
+                const val = $('#email').value.trim();
+                $('#emailHidden').value = val;
+                if (val) {
+                    $('#badgeEmailText').textContent = `${I18N[LANG].badgeAccount} ${val}`;
+                    $('#emailBadge').classList.add('show');
+                } else {
+                    if (!new URLSearchParams(location.search).get('email')) $('#emailBadge').classList.remove('show');
+                    setEmailStatus(null, 'clear');
+                    ACCOUNT_FOUND = false;
+                    $('#userid').value = '';
+                    $('#emailHint').textContent = IS_DIRECT ? I18N[LANG].emailHintDirect : I18N[LANG].emailHint;
+                    updateCTA();
+                    return;
+                }
+                const valid = isEmailValid(val);
+                $('#email').classList.toggle('invalid', val && !valid);
+                if (!valid) {
+                    setEmailStatus('err');
+                    ACCOUNT_FOUND = false;
+                    $('#userid').value = '';
+                    $('#emailHint').textContent = LANG === 'en' ? 'Enter a valid email' : LANG === 'ru' ? 'Введите корректный email' : 'Увядзіце карэктны email';
+                    updateCTA();
+                    return;
+                }
+                setEmailStatus('loading');
+                $('#emailHint').textContent = I18N[LANG].emailSearching;
+                clearTimeout(emailDebounce);
+                emailDebounce = setTimeout(async () => {
+                    const found = await lookupAccount(val);
+                    // Поле могли дописать, пока летел запрос — тогда ответ уже
+                    // не про то, что сейчас в поле, и применять его нельзя.
+                    if ($('#email').value.trim() !== val) return;
+                    if (found === null) {
+                        // Сеть или сервер. Пропускаем дальше: настоящую
+                        // проверку всё равно делает bepaid-token, а держать
+                        // человека на «не найдено» из-за своей же ошибки —
+                        // это потерянный платёж.
+                        setEmailStatus(null, 'clear');
+                        ACCOUNT_FOUND = false;
+                        $('#userid').value = '—';
+                        $('#emailHint').textContent = LANG === 'en' ? 'Could not check the account right now — you can still continue.' : LANG === 'ru' ? 'Сейчас не удалось проверить аккаунт — можно продолжать.' : 'Зараз не атрымалася праверыць акаўнт — можна працягваць.';
+                        $('#emailHint').classList.remove('err');
+                    } else if (found === false) {
+                        setEmailStatus('err');
+                        ACCOUNT_FOUND = false;
+                        $('#userid').value = '';
+                        $('#emailHint').textContent = I18N[LANG].emailNotFound;
+                        $('#emailHint').classList.add('err');
+                        showToast(I18N[LANG].emailNotFound);
+                    } else {
+                        setEmailStatus('ok');
+                        ACCOUNT_FOUND = true;
+                        $('#userid').value = I18N[LANG].emailFound;
+                        $('#emailHint').textContent = I18N[LANG].emailHintFound;
+                        $('#emailHint').classList.remove('err');
+                        $('#hintUserId').textContent = I18N[LANG].hintUidApp;
+                        if (IS_DIRECT) {
+                            $('#directBanner').style.opacity = '0.65';
+                            setTimeout(() => $('#directBanner').classList.remove('show'), 1400);
+                        }
+                    }
+                    updateCTA();
+                }, 650);
+            });
+            $('#email').addEventListener('blur', () => {
+                const v = $('#email').value.trim();
+                if (!v) {
+                    $('#emailHint').textContent = IS_DIRECT ? I18N[LANG].emailHintDirect : I18N[LANG].emailHint;
+                    $('#emailHint').classList.remove('err');
+                    return;
+                }
+                if (v && !isEmailValid(v)) {
+                    $('#emailHint').textContent = LANG === 'en' ? 'Enter a valid email' : LANG === 'ru' ? 'Введите корректный email' : 'Увядзіце карэктны email';
+                    $('#emailHint').classList.add('err');
+                } else if (ACCOUNT_FOUND) {
+                    $('#emailHint').textContent = I18N[LANG].emailHintFound;
+                    $('#emailHint').classList.remove('err');
+                } else if (!IS_DIRECT) {
+                    $('#emailHint').textContent = I18N[LANG].emailHint;
+                    $('#emailHint').classList.remove('err');
+                }
+            });
+            // Email пришёл ссылкой из приложения — проверяем его тем же
+            // запросом, что и набранный руками. Доверять параметру нельзя.
+            if ($('#email').value.trim() && isEmailValid($('#email').value.trim())) {
+                $('#email').dispatchEvent(new Event('input'));
+            }
+
+            // --- кнопка оплаты (CTA) ---
+            $('#ctaBtn').addEventListener('click', async () => {
+                const email = $('#email').value.trim();
+                if (!email || !isEmailValid(email)) {
+                    $('#email').classList.add('invalid');
+                    $('#email').focus();
+                    showToast(I18N[LANG].toastNeedEmail);
+                    $('#email').style.animation = 'shake .35s';
+                    setTimeout(() => $('#email').style.animation = '', 400);
+                    return;
+                }
+                if (document.querySelector('#emailStatus.load')) {
+                    showToast(I18N[LANG].emailSearching);
+                    return;
+                }
+                if (document.querySelector('#emailStatus.err')) {
+                    $('#emailHint').textContent = I18N[LANG].emailNotFound;
+                    $('#emailHint').classList.add('err');
+                    showToast(I18N[LANG].emailNotFound);
+                    $('#email').focus();
+                    $('#email').style.animation = 'shake .35s';
+                    setTimeout(() => $('#email').style.animation = '', 400);
+                    return;
+                }
+
+                const btn = $('#ctaBtn');
+                const orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;display:inline-block;animation:spin .7s linear infinite"></span> <span>${LANG==='en'?'Processing...':LANG==='ru'?'Обработка...':'Апрацоўка...'}</span>`;
+
+                // Сумму, валюту и владельца платежа собирает bepaid-token
+                // секретным ключом магазина. Отсюда уходят только email и
+                // название тарифа — подменить цену из браузера нельзя.
+                let payment;
+                try {
+                    const res = await fetch(`${API.base}/${API.token}`, {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({ email, plan: SELECTED, language: LANG })
+                    });
+                    payment = await res.json().catch(() => null);
+                    if (!res.ok || !payment || !payment.token) {
+                        btn.innerHTML = orig;
+                        btn.disabled = false;
+                        if (payment && payment.error === 'unknown_user') {
+                            setEmailStatus('err');
+                            $('#emailHint').textContent = I18N[LANG].emailNotFound;
+                            $('#emailHint').classList.add('err');
+                            showToast(I18N[LANG].emailNotFound);
+                            $('#email').focus();
+                        } else {
+                            showToast(I18N[LANG].toastPayFailed);
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
+                    showToast(I18N[LANG].toastPayFailed);
+                    return;
+                }
+
+                // Виджет рисует поля карты в собственном iframe и сам ведёт
+                // 3D-Secure. Мы получаем только исход.
+                try {
+                    new BeGateway({
+                        checkout_url: payment.checkout_url,
+                        token: payment.token,
+                        closeWidget: function(status) {
+                            btn.innerHTML = orig;
+                            btn.disabled = false;
+                            if (status === 'successful') {
+                                triggerSuccess();
+                            } else if (status === 'failed' || status === 'error') {
+                                showToast(I18N[LANG].toastPayFailed);
+                            } else {
+                                showToast(I18N[LANG].toastPayCancelled);
+                            }
+                        }
+                    }).createWidget();
+                } catch (e) {
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
+                    showToast(I18N[LANG].toastPayFailed);
+                }
+            });
+
+            // --- модальное окно ---
+            $('#btnCloseModal').addEventListener('click', () => $('#modal').classList.remove('show'));
+            $('#modal').addEventListener('click', e => {
+                if (e.target === $('#modal')) $('#modal').classList.remove('show');
+            });
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') $('#modal').classList.remove('show');
+            });
+        });
+    </script>
 </body>
+
 </html>
